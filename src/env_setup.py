@@ -12,7 +12,7 @@ class CarRacingWrapper:
     """
 
     def __init__(self, continuous: bool = True, frame_stack: int = 4, grayscale: bool = True, render_mode: str = None):
-        self.env = gym.make("CarRacing-v2", continuous=continuous, render_mode=render_mode)
+        self.env = gym.make("CarRacing-v3", continuous=continuous, render_mode=render_mode)
         self.continuous = continuous
         self.frame_stack = frame_stack
         self.grayscale = grayscale
