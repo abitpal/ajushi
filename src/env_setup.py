@@ -65,25 +65,25 @@ class CarRacingWrapper:
         self.env.close()
 
 
-if __name__ == "__main__":
-    env = CarRacingWrapper(continuous=True, frame_stack=4, grayscale=True, render_mode="human")
+# if __name__ == "__main__":
+#     env = CarRacingWrapper(continuous=True, frame_stack=4, grayscale=True, render_mode="human")
 
-    obs, info = env.reset()
-    done = False
-    total_reward = 0.0
+#     obs, info = env.reset()
+#     done = False
+#     total_reward = 0.0
 
-    while not done:
-        # Sample random actions for demo
-        if env.continuous:
-            action = np.random.uniform(low=-1.0, high=1.0, size=3)
-        else:
-            action = env.env.action_space.sample()
+#     while not done:
+#         # Sample random actions for demo
+#         if env.continuous:
+#             action = np.random.uniform(low=-1.0, high=1.0, size=3)
+#         else:
+#             action = env.env.action_space.sample()
 
-        obs, reward, done, info = env.step(action)
-        total_reward += reward
+#         obs, reward, done, info = env.step(action)
+#         total_reward += reward
 
-        env.render()
+#         env.render()
 
-    print(f"Episode finished with total reward: {total_reward:.2f}")
-    env.close()
+#     print(f"Episode finished with total reward: {total_reward:.2f}")
+#     env.close()
 
