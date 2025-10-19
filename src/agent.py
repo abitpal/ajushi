@@ -14,10 +14,14 @@ if __name__ == "__main__":
     #     env.render()
 
 
-    model = PPO("CnnPolicy", env)
+    # model = PPO("CnnPolicy", env)
+    # model.learn(total_timesteps=10000)
+    # model.save("ppo_car_racing")
+    print("Model saved")
+
+    model = PPO.load("ppo_car_racing", env=env)
     model.learn(total_timesteps=10000)
     model.save("ppo_car_racing")
-    print("Model saved")
 
     obs = env.reset()
     while True:
