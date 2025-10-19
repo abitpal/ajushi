@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Telemetry Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #e10600 0%, #ffffff 50%, #e10600 100%);
+            color: #000000;
+            padding: 20px;
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h3 {
+            color: #e10600;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-align: center;
+            border-bottom: 2px solid #e10600;
+            padding-bottom: 5px;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .telemetry-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .telemetry-label {
+            font-size: 0.9em;
+            color: #cccccc;
+            margin-bottom: 5px;
+        }
+
+        .telemetry-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .speed-value {
+            color: #00ff00;
+            font-size: 2em;
+        }
+
+        .rpm-value {
+            color: #ff6b6b;
+        }
+
+        .gear-value {
+            color: #4ecdc4;
+            font-size: 2em;
+        }
+
+        .track-container {
+            grid-column: 1 / -1;
+            height: 400px;
+            position: relative;
+            background: #000000;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .track-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .car-position {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #e10600;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: 0 0 20px #e10600;
+            transition: all 0.1s ease;
+        }
+
+        .predicted-path {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ff00;
+            border-radius: 50%;
+            opacity: 0.7;
+            z-index: 5;
+        }
+
+        .tire-temps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .tire-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .tire-label {
+            font-size: 0.8em;
+            color: #cccccc;
+            margin-bottom: 5px;
+        }
+
+        .tire-temp {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .temp-hot { color: #ff4444; }
+        .temp-warm { color: #ffaa44; }
+        .temp-cool { color: #44ff44; }
+
+        .status-indicators {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+        }
+
+        .status-active { background: #00ff00; }
+        .status-inactive { background: #666666; }
+
+        .fuel-bar {
+            width: 100%;
+            height: 20px;
+            background: #333333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .fuel-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000 0%, #ffff00 50%, #00ff00 100%);
+            transition: width 0.3s ease;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 15px;
+        }
+
+        .lap-timer {
+            font-size: 3em;
+            color: #e10600;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">F1 TELEMETRY DASHBOARD</div>
+    
+    <div class="lap-timer" id="lap-timer">1:23.456</div>
+    
+    <div class="dashboard-container">
+        <!-- Speed and RPM Panel -->
+        <div class="panel">
+            <h3>SPEED & RPM</h3>
+            <div class="telemetry-grid">
+                <div class="telemetry-item">
+                    <div class="telemetry-label">SPEED</div>
+                    <div class="telemetry-value speed-value" id="speed">0</div>
+                    <div class="telemetry-label">km/h</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">RPM</div>
+                    <div class="telemetry-value rpm-value" id="rpm">0</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">GEAR</div>
+                    <div class="telemetry-value gear-value" id="gear">1</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">SECTOR</div>
+                    <div class="telemetry-value" id="sector">1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="panel">
+            <h3>DRIVER CONTROLS</h3>
+            <div class="telemetry-grid">
+                <div class="telemetry-item">
+                    <div class="telemetry-label">THROTTLE</div>
+                    <div class="telemetry-value" id="throttle">0%</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">BRAKE</div>
+                    <div class="telemetry-value" id="brake">0%</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">STEERING</div>
+                    <div class="telemetry-value" id="steering">0.0°</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">DRS</div>
+                    <div class="telemetry-value" id="drs">OFF</div>
+                </div>
+            </div>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <div class="status-dot status-inactive" id="drs-indicator"></div>
+                    <div class="telemetry-label">DRS</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot status-active" id="ers-indicator"></div>
+                    <div class="telemetry-label">ERS</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fuel and Systems Panel -->
+        <div class="panel">
+            <h3>FUEL & SYSTEMS</h3>
+            <div class="telemetry-item">
+                <div class="telemetry-label">FUEL REMAINING</div>
+                <div class="telemetry-value" id="fuel">100.0</div>
+                <div class="fuel-bar">
+                    <div class="fuel-fill" id="fuel-bar"></div>
+                </div>
+            </div>
+            <div class="telemetry-item" style="margin-top: 15px;">
+                <div class="telemetry-label">ERS MODE</div>
+                <div class="telemetry-value" id="ers-mode">Medium</div>
+            </div>
+        </div>
+
+        <!-- Track Visualization -->
+        <div class="panel track-container">
+            <h3 style="position: absolute; top: 10px; left: 20px; z-index: 5;">TRACK POSITION</h3>
+            <svg class="track-svg" id="track-svg"></svg>
+            <div class="car-position" id="car-position"></div>
+        </div>
+
+        <!-- Tire Temperatures -->
+        <div class="panel">
+            <h3>TIRE TEMPERATURES</h3>
+            <div class="tire-temps">
+                <div class="tire-item">
+                    <div class="tire-label">FL</div>
+                    <div class="tire-temp" id="tire-fl">85°C</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">FR</div>
+                    <div class="tire-temp" id="tire-fr">87°C</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">RL</div>
+                    <div class="tire-temp" id="tire-rl">83°C</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">RR</div>
+                    <div class="tire-temp" id="tire-rr">86°C</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tire Pressures -->
+        <div class="panel">
+            <h3>TIRE PRESSURES</h3>
+            <div class="tire-temps">
+                <div class="tire-item">
+                    <div class="tire-label">FL</div>
+                    <div class="tire-temp" id="pressure-fl">22.1</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">FR</div>
+                    <div class="tire-temp" id="pressure-fr">22.3</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">RL</div>
+                    <div class="tire-temp" id="pressure-rl">21.8</div>
+                </div>
+                <div class="tire-item">
+                    <div class="tire-label">RR</div>
+                    <div class="tire-temp" id="pressure-rr">22.0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // F1 Telemetry Data Generator
+        class F1TelemetryGenerator {
+            constructor() {
+                this.lapTime = 0;
+                this.sector = 1;
+                this.position = { x: 0, y: 0 };
+                this.speed = 0;
+                this.rpm = 0;
+                this.gear = 1;
+                this.throttle = 0;
+                this.brake = 0;
+                this.steering = 0;
+                this.drs = false;
+                this.ersDeployMode = "Medium";
+                this.fuelRemaining = 100;
+                this.tireTemps = { fl: 85, fr: 87, rl: 83, rr: 86 };
+                this.tirePressures = { fl: 22.1, fr: 22.3, rl: 21.8, rr: 22.0 };
+                this.trackRadius = 200;
+                this.centerX = 300;
+                this.centerY = 200;
+                this.angle = 0;
+                this.predictedPath = [];
+            }
+
+            generateTelemetry() {
+                // Simulate lap progression
+                this.lapTime += 0.1;
+                this.angle += 0.02;
+
+                // Generate track position (oval track)
+                this.position.x = this.centerX + this.trackRadius * Math.cos(this.angle);
+                this.position.y = this.centerY + this.trackRadius * Math.sin(this.angle);
+
+                // Update sector based on angle
+                if (this.angle < Math.PI * 2/3) {
+                    this.sector = 1;
+                } else if (this.angle < Math.PI * 4/3) {
+                    this.sector = 2;
+                } else {
+                    this.sector = 3;
+                }
+
+                // Generate realistic telemetry data
+                this.speed = Math.floor(180 + Math.sin(this.angle * 2) * 50 + Math.random() * 20);
+                this.rpm = Math.floor(8000 + (this.speed / 320) * 4000 + Math.random() * 200);
+                this.gear = Math.min(8, Math.max(1, Math.floor(this.speed / 40)));
+                this.throttle = Math.floor(20 + Math.random() * 80);
+                this.brake = this.speed > 200 ? Math.floor(Math.random() * 80) : 0;
+                this.steering = (Math.random() - 0.5) * 0.6;
+                this.drs = Math.random() > 0.7 && this.speed > 250;
+                this.fuelRemaining = Math.max(0, this.fuelRemaining - Math.random() * 0.2);
+
+                // Tire temperature simulation
+                Object.keys(this.tireTemps).forEach(tire => {
+                    this.tireTemps[tire] += (Math.random() - 0.5) * 4;
+                    this.tireTemps[tire] = Math.max(60, Math.min(120, this.tireTemps[tire]));
+                });
+
+                // Tire pressure simulation
+                Object.keys(this.tirePressures).forEach(tire => {
+                    this.tirePressures[tire] += (Math.random() - 0.5) * 0.2;
+                    this.tirePressures[tire] = Math.max(20.0, Math.min(24.0, this.tirePressures[tire]));
+                });
+
+                return {
+                    lapTime: this.lapTime,
+                    sector: this.sector,
+                    position: this.position,
+                    speed: this.speed,
+                    rpm: this.rpm,
+                    gear: this.gear,
+                    throttle: this.throttle,
+                    brake: this.brake,
+                    steering: this.steering,
+                    drs: this.drs,
+                    ersDeployMode: this.ersDeployMode,
+                    fuelRemaining: this.fuelRemaining,
+                    tireTemps: this.tireTemps,
+                    tirePressures: this.tirePressures
+                };
+            }
+        }
+
+        // Initialize telemetry generator
+        const telemetryGen = new F1TelemetryGenerator();
+
+        // Initialize track visualization
+        function initTrack() {
+            const svg = document.getElementById('track-svg');
+            const trackRadius = 200;
+            const centerX = 300;
+            const centerY = 200;
+
+            // Create track path (oval)
+            const trackPoints = [];
+            for (let i = 0; i < 100; i++) {
+                const angle = (i / 100) * 2 * Math.PI;
+                const x = centerX + trackRadius * Math.cos(angle);
+                const y = centerY + trackRadius * Math.sin(angle);
+                trackPoints.push({ x, y });
+            }
+
+            // Draw track
+            let pathData = `M ${trackPoints[0].x} ${trackPoints[0].y}`;
+            for (let i = 1; i < trackPoints.length; i++) {
+                pathData += ` L ${trackPoints[i].x} ${trackPoints[i].y}`;
+            }
+            pathData += ' Z';
+
+            const trackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            trackPath.setAttribute('d', pathData);
+            trackPath.setAttribute('fill', 'none');
+            trackPath.setAttribute('stroke', '#333333');
+            trackPath.setAttribute('stroke-width', '20');
+            svg.appendChild(trackPath);
+
+            // Add sector markers
+            const sectors = [
+                { start: 0, end: 33, name: 'S1' },
+                { start: 33, end: 66, name: 'S2' },
+                { start: 66, end: 100, name: 'S3' }
+            ];
+
+            sectors.forEach((sector, index) => {
+                const startPoint = trackPoints[sector.start];
+                const sectorMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                sectorMarker.setAttribute('cx', startPoint.x);
+                sectorMarker.setAttribute('cy', startPoint.y);
+                sectorMarker.setAttribute('r', '8');
+                sectorMarker.setAttribute('fill', '#e10600');
+                svg.appendChild(sectorMarker);
+
+                // Add sector labels
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', startPoint.x);
+                label.setAttribute('y', startPoint.y - 15);
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('fill', '#ffffff');
+                label.setAttribute('font-size', '12');
+                label.setAttribute('font-weight', 'bold');
+                label.textContent = sector.name;
+                svg.appendChild(label);
+            });
+        }
+
+        function updateTelemetry(data) {
+            // Update speed and RPM
+            document.getElementById('speed').textContent = data.speed;
+            document.getElementById('rpm').textContent = data.rpm.toLocaleString();
+            document.getElementById('gear').textContent = data.gear;
+            document.getElementById('sector').textContent = data.sector;
+
+            // Update lap timer
+            const minutes = Math.floor(data.lapTime / 60);
+            const seconds = (data.lapTime % 60).toFixed(3);
+            document.getElementById('lap-timer').textContent = `${minutes}:${seconds.padStart(6, '0')}`;
+
+            // Update controls
+            document.getElementById('throttle').textContent = data.throttle + '%';
+            document.getElementById('brake').textContent = data.brake + '%';
+            document.getElementById('steering').textContent = (data.steering * 10).toFixed(1) + '°';
+            document.getElementById('drs').textContent = data.drs ? 'ON' : 'OFF';
+
+            // Update DRS indicator
+            const drsIndicator = document.getElementById('drs-indicator');
+            drsIndicator.className = `status-dot ${data.drs ? 'status-active' : 'status-inactive'}`;
+
+            // Update fuel
+            document.getElementById('fuel').textContent = data.fuelRemaining.toFixed(1);
+            document.getElementById('fuel-bar').style.width = data.fuelRemaining + '%';
+
+            // Update ERS mode
+            document.getElementById('ers-mode').textContent = data.ersDeployMode;
+
+            // Update tire temperatures
+            Object.keys(data.tireTemps).forEach(tire => {
+                const element = document.getElementById(`tire-${tire}`);
+                const temp = data.tireTemps[tire];
+                element.textContent = temp.toFixed(0) + '°C';
+
+                // Color coding for temperature
+                element.className = 'tire-temp';
+                if (temp > 100) element.classList.add('temp-hot');
+                else if (temp > 80) element.classList.add('temp-warm');
+                else element.classList.add('temp-cool');
+            });
+
+            // Update tire pressures
+            Object.keys(data.tirePressures).forEach(tire => {
+                const element = document.getElementById(`pressure-${tire}`);
+                element.textContent = data.tirePressures[tire].toFixed(1);
+            });
+
+            // Update car position
+            updateCarPosition(data.position);
+
+            // Generate predicted path
+            generatePredictedPath(data.position);
+        }
+
+        function updateCarPosition(position) {
+            const car = document.getElementById('car-position');
+            car.style.left = position.x + 'px';
+            car.style.top = position.y + 'px';
+        }
+
+        function generatePredictedPath(currentPos) {
+            // Add current position to predicted path
+            telemetryGen.predictedPath.push({
+                ...currentPos,
+                timestamp: Date.now()
+            });
+
+            // Keep only recent points (last 2 seconds)
+            const now = Date.now();
+            telemetryGen.predictedPath = telemetryGen.predictedPath.filter(
+                point => now - point.timestamp < 2000
+            );
+
+            // Clear old predicted path elements
+            document.querySelectorAll('.predicted-path').forEach(el => el.remove());
+
+            // Draw predicted path
+            telemetryGen.predictedPath.forEach((point, index) => {
+                const pathElement = document.createElement('div');
+                pathElement.className = 'predicted-path';
+                pathElement.style.left = point.x + 'px';
+                pathElement.style.top = point.y + 'px';
+                pathElement.style.opacity = (index / telemetryGen.predictedPath.length) * 0.7;
+                document.querySelector('.track-container').appendChild(pathElement);
+            });
+        }
+
+        // Main update loop
+        function updateDashboard() {
+            const data = telemetryGen.generateTelemetry();
+            updateTelemetry(data);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initTrack();
+            setInterval(updateDashboard, 100); // Update every 100ms
+        });
+    </script>
+</body>
+</html>
