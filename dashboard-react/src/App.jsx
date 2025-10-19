@@ -20,6 +20,7 @@ import Leaderboard from './components/Leaderboard';
 import TireStatus from './components/TireStatus';
 import RaceProgress from './components/RaceProgress';
 import LapPace from './components/LapPace';
+import StarField from './components/StarField';
 
 function App() {
   const [telemetry, setTelemetry] = useState(null);
@@ -53,17 +54,124 @@ function App() {
       minHeight: '100vh',
       background: 'radial-gradient(ellipse at top, #1a1a3e 0%, #0f0f23 50%, #000000 100%)',
       position: 'relative',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '400px',
-        background: 'radial-gradient(circle at 50% 0%, rgba(0, 217, 255, 0.1) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }
+      overflow: 'hidden',
     }}>
+      {/* Animated Starfield with Constellations */}
+      <StarField />
+
+      {/* Galaxy 1 - Large Spiral (top right) - Very visible */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '8%',
+          right: '3%',
+          width: '500px',
+          height: '500px',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1543722530-d2c3201371e7?w=1200&q=80)',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.5,
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+          zIndex: 0,
+          transform: 'rotate(25deg)',
+        }}
+      />
+
+      {/* Galaxy 2 - Whirlpool style (left side) - Cyan tinted */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '40%',
+          left: '5%',
+          width: '400px',
+          height: '400px',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=1200&q=80)',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.45,
+          filter: 'hue-rotate(200deg) brightness(1.2)',
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+          zIndex: 0,
+          transform: 'rotate(-30deg)',
+        }}
+      />
+
+      {/* Galaxy 3 - Smaller spiral (bottom right) - Purple/Pink */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: '10%',
+          right: '12%',
+          width: '350px',
+          height: '350px',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1200&q=80)',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.4,
+          filter: 'hue-rotate(280deg) brightness(1.3)',
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+          zIndex: 0,
+          transform: 'rotate(15deg)',
+        }}
+      />
+
+      {/* Galaxy 4 - Small distant one (top left) */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '15%',
+          left: '10%',
+          width: '280px',
+          height: '280px',
+          backgroundImage: 'url(https://images.unsplash.com/photo-1543722530-d2c3201371e7?w=800&q=80)',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          opacity: 0.35,
+          filter: 'hue-rotate(150deg)',
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+          zIndex: 0,
+          transform: 'rotate(-45deg)',
+        }}
+      />
+
+      {/* Nebula effect - cyan glow */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '-10%',
+          right: '20%',
+          width: '500px',
+          height: '500px',
+          background: 'radial-gradient(circle, rgba(0, 217, 255, 0.08) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Nebula effect - pink/purple glow */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: '20%',
+          left: '10%',
+          width: '450px',
+          height: '450px',
+          background: 'radial-gradient(circle, rgba(147, 112, 219, 0.06) 0%, transparent 70%)',
+          filter: 'blur(70px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
       {/* Header */}
       <AppBar 
         position="static" 
@@ -72,6 +180,8 @@ function App() {
           background: 'rgba(15, 15, 35, 0.8)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(0, 217, 255, 0.2)',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <Toolbar sx={{ py: 1 }}>
@@ -134,7 +244,7 @@ function App() {
         </Typography>
       </Box>
 
-      <Container maxWidth="xl" sx={{ pb: 4 }}>
+      <Container maxWidth="xl" sx={{ pb: 4, position: 'relative', zIndex: 1 }}>
         <Grid container spacing={3}>
           {/* Speed & RPM */}
           <Grid item xs={12} md={6} lg={3}>
