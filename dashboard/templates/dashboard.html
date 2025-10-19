@@ -32,7 +32,7 @@
         .dashboard-container {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: auto auto auto;
+            grid-template-rows: auto auto auto auto;
             gap: 20px;
             padding: 20px;
             min-height: 100vh;
@@ -195,6 +195,124 @@
             transition: width 0.3s ease;
         }
 
+        .race-progress {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #333333;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e10600 0%, #ff6b6b 50%, #e10600 100%);
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .leaderboard {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border-left: 4px solid #e10600;
+        }
+
+        .leaderboard-item.current-driver {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .driver-position {
+            font-weight: bold;
+            color: #e10600;
+            min-width: 30px;
+        }
+
+        .driver-name {
+            flex: 1;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+
+        .driver-lap {
+            color: #cccccc;
+            font-size: 0.9em;
+        }
+
+        .pace-comparison {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .pace-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .pace-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .pace-current { color: #ffffff; }
+        .pace-best { color: #00ff00; }
+        .pace-delta { color: #ff6b6b; }
+
+        .race-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #cccccc;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
         .chart-container {
             position: relative;
             height: 200px;
@@ -353,6 +471,66 @@
                 </div>
             </div>
         </div>
+
+        <!-- Race Progress -->
+        <div class="panel">
+            <h3>RACE PROGRESS</h3>
+            <div class="race-progress">
+                <div class="telemetry-label">RACE COMPLETION</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="race-progress-fill">
+                        <div class="progress-text" id="race-progress-text">0%</div>
+                    </div>
+                </div>
+                <div class="race-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">CURRENT LAP</div>
+                        <div class="stat-value" id="current-lap">1</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">TOTAL LAPS</div>
+                        <div class="stat-value" id="total-laps">58</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lap Pace Tracker -->
+        <div class="panel">
+            <h3>LAP PACE</h3>
+            <div class="pace-comparison">
+                <div class="pace-item">
+                    <div class="telemetry-label">CURRENT LAP</div>
+                    <div class="pace-value pace-current" id="current-lap-time">1:23.456</div>
+                </div>
+                <div class="pace-item">
+                    <div class="telemetry-label">BEST LAP</div>
+                    <div class="pace-value pace-best" id="best-lap-time">1:22.123</div>
+                </div>
+                <div class="pace-item">
+                    <div class="telemetry-label">DELTA</div>
+                    <div class="pace-value pace-delta" id="lap-delta">+1.333</div>
+                </div>
+            </div>
+            <div class="race-stats">
+                <div class="stat-item">
+                    <div class="stat-label">AVG LAP TIME</div>
+                    <div class="stat-value" id="avg-lap-time">1:24.567</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">LAP COUNT</div>
+                    <div class="stat-value" id="lap-count">1/58</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="panel">
+            <h3>LEADERBOARD</h3>
+            <div class="leaderboard" id="leaderboard">
+                <!-- Leaderboard items will be populated by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -378,12 +556,43 @@
                 this.centerY = 200;
                 this.angle = 0;
                 this.predictedPath = [];
+                
+                // Race tracking
+                this.currentLap = 1;
+                this.totalLaps = 58;
+                this.bestLapTime = 82.123; // 1:22.123
+                this.lapTimes = [];
+                this.raceStartTime = Date.now();
+                this.lastLapTime = 0;
+                this.drivers = this.generateDrivers();
+            }
+
+            generateDrivers() {
+                const driverNames = [
+                    "VER", "LEC", "NOR", "RUS", "PER", "SAI", "HAM", "ALO", 
+                    "OCO", "BOT", "GAS", "STR", "ALB", "MAG", "TSU", "HUL",
+                    "ZHO", "RIC", "PIA", "SAR"
+                ];
+                
+                return driverNames.map((name, index) => ({
+                    name: name,
+                    position: index + 1,
+                    currentLap: Math.floor(Math.random() * 3) + 1,
+                    lapTime: 82 + Math.random() * 5, // 1:22-1:27
+                    isCurrentDriver: index === 0
+                }));
             }
 
             generateTelemetry() {
                 // Simulate lap progression
                 this.lapTime += 0.1;
                 this.angle += 0.02;
+
+                // Check for lap completion
+                if (this.angle >= 2 * Math.PI) {
+                    this.completeLap();
+                    this.angle = 0;
+                }
 
                 // Generate track position (oval track)
                 this.position.x = this.centerX + this.trackRadius * Math.cos(this.angle);
@@ -420,6 +629,9 @@
                     this.tirePressures[tire] = Math.max(20.0, Math.min(24.0, this.tirePressures[tire]));
                 });
 
+                // Update drivers' lap times
+                this.updateDrivers();
+
                 return {
                     lapTime: this.lapTime,
                     sector: this.sector,
@@ -434,8 +646,38 @@
                     ersDeployMode: this.ersDeployMode,
                     fuelRemaining: this.fuelRemaining,
                     tireTemps: this.tireTemps,
-                    tirePressures: this.tirePressures
+                    tirePressures: this.tirePressures,
+                    currentLap: this.currentLap,
+                    totalLaps: this.totalLaps,
+                    bestLapTime: this.bestLapTime,
+                    drivers: this.drivers
                 };
+            }
+
+            completeLap() {
+                this.currentLap++;
+                const lapTime = this.lapTime;
+                this.lapTimes.push(lapTime);
+                
+                // Update best lap time
+                if (lapTime < this.bestLapTime) {
+                    this.bestLapTime = lapTime;
+                }
+                
+                this.lapTime = 0;
+            }
+
+            updateDrivers() {
+                // Simulate other drivers progressing
+                this.drivers.forEach((driver, index) => {
+                    if (!driver.isCurrentDriver) {
+                        // Randomly advance other drivers
+                        if (Math.random() < 0.001) { // 0.1% chance per update
+                            driver.currentLap++;
+                            driver.lapTime = 82 + Math.random() * 5;
+                        }
+                    }
+                });
             }
         }
 
@@ -549,11 +791,81 @@
                 element.textContent = data.tirePressures[tire].toFixed(1);
             });
 
+            // Update race progress
+            updateRaceProgress(data);
+
+            // Update lap pace
+            updateLapPace(data);
+
+            // Update leaderboard
+            updateLeaderboard(data.drivers);
+
             // Update car position
             updateCarPosition(data.position);
 
             // Generate predicted path
             generatePredictedPath(data.position);
+        }
+
+        function updateRaceProgress(data) {
+            const raceProgress = (data.currentLap / data.totalLaps) * 100;
+            document.getElementById('race-progress-fill').style.width = raceProgress + '%';
+            document.getElementById('race-progress-text').textContent = raceProgress.toFixed(1) + '%';
+            document.getElementById('current-lap').textContent = data.currentLap;
+            document.getElementById('total-laps').textContent = data.totalLaps;
+        }
+
+        function updateLapPace(data) {
+            // Current lap time
+            const currentLapTime = data.lapTime;
+            const minutes = Math.floor(currentLapTime / 60);
+            const seconds = (currentLapTime % 60).toFixed(3);
+            document.getElementById('current-lap-time').textContent = `${minutes}:${seconds.padStart(6, '0')}`;
+
+            // Best lap time
+            const bestMinutes = Math.floor(data.bestLapTime / 60);
+            const bestSeconds = (data.bestLapTime % 60).toFixed(3);
+            document.getElementById('best-lap-time').textContent = `${bestMinutes}:${bestSeconds.padStart(6, '0')}`;
+
+            // Delta time
+            const delta = currentLapTime - data.bestLapTime;
+            const deltaMinutes = Math.floor(Math.abs(delta) / 60);
+            const deltaSeconds = (Math.abs(delta) % 60).toFixed(3);
+            const deltaText = delta >= 0 ? `+${deltaMinutes}:${deltaSeconds.padStart(6, '0')}` : `-${deltaMinutes}:${deltaSeconds.padStart(6, '0')}`;
+            document.getElementById('lap-delta').textContent = deltaText;
+
+            // Average lap time
+            if (data.lapTimes && data.lapTimes.length > 0) {
+                const avgLapTime = data.lapTimes.reduce((sum, time) => sum + time, 0) / data.lapTimes.length;
+                const avgMinutes = Math.floor(avgLapTime / 60);
+                const avgSeconds = (avgLapTime % 60).toFixed(3);
+                document.getElementById('avg-lap-time').textContent = `${avgMinutes}:${avgSeconds.padStart(6, '0')}`;
+            }
+
+            // Lap count
+            document.getElementById('lap-count').textContent = `${data.currentLap}/${data.totalLaps}`;
+        }
+
+        function updateLeaderboard(drivers) {
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '';
+
+            drivers.forEach((driver, index) => {
+                const driverElement = document.createElement('div');
+                driverElement.className = `leaderboard-item ${driver.isCurrentDriver ? 'current-driver' : ''}`;
+                
+                const lapTimeMinutes = Math.floor(driver.lapTime / 60);
+                const lapTimeSeconds = (driver.lapTime % 60).toFixed(3);
+                const lapTimeText = `${lapTimeMinutes}:${lapTimeSeconds.padStart(6, '0')}`;
+
+                driverElement.innerHTML = `
+                    <div class="driver-position">${driver.position}</div>
+                    <div class="driver-name">${driver.name}</div>
+                    <div class="driver-lap">L${driver.currentLap} - ${lapTimeText}</div>
+                `;
+
+                leaderboard.appendChild(driverElement);
+            });
         }
 
         function updateCarPosition(position) {
