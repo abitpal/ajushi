@@ -104,48 +104,49 @@ class MultiAgentDQNSimulation:
     
     def play_episode(self, deterministic: bool = True, render: bool = True) -> Dict[str, Any]:
         """Play a single episode with all agents."""
-        obs, info = self.marl_env.reset()
+        # obs, info = self.marl_env.reset()
         
-        episode_rewards = [0.0] * self.n_agents
-        episode_length = 0
-        done = False
+        # episode_rewards = [0.0] * self.n_agents
+        # episode_length = 0
+        # done = False
         
-        print(f"Starting episode with {self.n_agents} agents...")
+        # print(f"Starting episode with {self.n_agents} agents...")
         
-        while not done and episode_length < self.episode_length:
-            # Get actions from all agents
-            actions = []
-            for i, agent in enumerate(self.agents):
-                # Convert observation to the format expected by DQN
-                agent_obs = self._convert_obs_for_agent(obs[i], agent)
-                action, _ = agent.predict(agent_obs, deterministic=deterministic)
-                actions.append(action)
+        # while not done and episode_length < self.episode_length:
+        #     # Get actions from all agents
+        #     actions = []
+        #     for i, agent in enumerate(self.agents):
+        #         # Convert observation to the format expected by DQN
+        #         agent_obs = self._convert_obs_for_agent(obs[i], agent)
+        #         action, _ = agent.predict(agent_obs, deterministic=deterministic)
+        #         actions.append(action)
             
-            # Step the environment
-            obs, rewards, dones, truncateds, info = self.marl_env.step(actions)
+        #     # Step the environment
+        #     obs, rewards, dones, truncateds, info = self.marl_env.step(actions)
             
-            # Update episode rewards
-            for i in range(self.n_agents):
-                episode_rewards[i] += rewards[i]
+        #     # Update episode rewards
+        #     for i in range(self.n_agents):
+        #         episode_rewards[i] += rewards[i]
             
-            episode_length += 1
+        #     episode_length += 1
             
-            # Render if requested
-            if render and self.render_mode == "human":
-                self.marl_env.render()
-                time.sleep(0.02)  # Control rendering speed
+        #     # Render if requested
+        #     if render and self.render_mode == "human":
+        #         self.marl_env.render()
+        #         time.sleep(0.02)  # Control rendering speed
             
-            # Check if all agents are done
-            done = all(dones) or all(truncateds)
+        #     # Check if all agents are done
+        #     done = all(dones) or all(truncateds)
         
-        results = {
-            "episode_rewards": episode_rewards,
-            "episode_length": episode_length,
-            "agent_dones": dones,
-            "agent_truncateds": truncateds
-        }
+        # results = {
+        #     "episode_rewards": episode_rewards,
+        #     "episode_length": episode_length,
+        #     "agent_dones": dones,
+        #     "agent_truncateds": truncateds
+        # }
         
-        return results
+        # return results
+        pass
     
     def _convert_obs_for_agent(self, obs: np.ndarray, agent: DQNAgent) -> np.ndarray:
         """Convert MARL observation to DQN agent format."""

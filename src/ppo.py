@@ -15,9 +15,11 @@ if __name__ == "__main__":
     wrapper_class = WarpFrame if gray_scale else None
     # env = gymnasium.make('CarRacing-v3')
     # Create Training environment
+    seed = 1
     env = make_vec_env("CarRacing-v3",
         n_envs=1,
-        wrapper_class=wrapper_class
+        wrapper_class=wrapper_class, 
+        seed=1
     )
     env = VecFrameStack(env, n_stack=4)
     env = VecTransposeImage(env)

@@ -203,22 +203,53 @@ class MultiAgentCarRacingEnv(gym.Env):
         """Check if two agents are colliding."""
         distance = np.linalg.norm(self.agent_positions[agent1_id] - self.agent_positions[agent2_id])
         return distance < 20  # Collision threshold
-    
-    def render(self):
-        """Render the environment."""
-        if self.render_mode == "human":
-            # Render all environments (they will be overlaid)
-            for env in self.envs:
-                env.render()
-        elif self.render_mode == "rgb_array":
-            # Return combined view of all agents
-            frames = []
-            for env in self.envs:
-                frame = env.render()
-                if frame is not None:
-                    frames.append(frame)
-            return np.concatenate(frames, axis=1) if frames else None
-    
+
+    def render(self, stuff, mode="human"):
+        """Render all agents on a single combined frame."""
+        
+        # Create base frame from first env
+        base_frame = self.envs[0].render(mode="rgb_array")
+        print(f"Rendering with {self.n_agents}")
+        if base_frame is None:
+            return None
+
+        # Convert to float32 for easy drawing
+        combined_frame = base_frame.astype(np.uint8)
+
+        print(f"Rendering with {self.n_agents}")
+
+        # Overlay other agents
+        for i in range(self.n_agents):
+            # Get agent's position and angle
+            x, y = self.agent_positions[i]
+            angle = self.agent_angles[i]
+            
+            # Convert Box2D coords to pixel coords
+            # CarRacing-v3 has 96x96 window by default
+            pixel_x = int(np.clip(x, 0, self.width - 1))
+            pixel_y = int(np.clip(y, 0, self.height - 1))
+
+            # Draw a simple rectangle or triangle representing the car
+            car_size = 5  # pixels
+            pts = np.array([
+                [pixel_x + car_size, pixel_y],
+                [pixel_x - car_size, pixel_y - car_size],
+                [pixel_x - car_size, pixel_y + car_size]
+            ], np.int32)
+            
+            # Rotate points around center by angle
+            rot_matrix = cv2.getRotationMatrix2D((pixel_x, pixel_y), np.degrees(-angle), 1.0)
+            pts = cv2.transform(np.array([pts]), rot_matrix)[0]
+
+            # Draw the polygon
+            cv2.fillPoly(combined_frame, [pts.astype(np.int32)], color=(255, 0, 0))
+        
+        if mode == "human":
+            cv2.imshow("Multi-Agent CarRacing", combined_frame)
+            cv2.waitKey(int(1000 / self.metadata["render_fps"]))
+        elif mode == "rgb_array":
+            return combined_frame
+
     def close(self):
         """Close all environments."""
         for env in self.envs:
@@ -246,7 +277,8 @@ class MultiAgentCarRacingWrapper:
         return self.env.step(actions)
     
     def render(self):
-        return self.env.render()
+        print("stuffffff")
+        return self.env.render(True, "human")
     
     def close(self):
         return self.env.close()
